@@ -1,20 +1,49 @@
 use iced::{
     Length, Renderer, Subscription, Theme, color, keyboard,
-    widget::{Column, Container, MouseArea, button, column, container, mouse_area},
+    widget::{Container, MouseArea, button, column, container, mouse_area},
 };
+
+mod power;
 
 #[derive(Default)]
 struct Powr {
     btn_index: usize,
 }
 
-const BUTTONS: &[(&str, Message)] = &[
-    ("Lock", Message::Lock),
-    ("Sleep", Message::Sleep),
-    ("Suspend", Message::Suspend),
-    ("Hibernate", Message::Hibernate),
-    ("Reboot", Message::Reboot),
-    ("Shutdown", Message::Shutdown),
+struct PowrButton {
+    name: &'static str,
+    message: Message,
+    run: ButtonFn,
+}
+
+type ButtonFn = fn();
+
+const BUTTONS: &[PowrButton] = &[
+    PowrButton {
+        name: "Lock",
+        message: Message::Lock,
+        run: power::lock,
+    },
+    PowrButton {
+        name: "Sleep",
+        message: Message::Sleep,
+        run: power::sleep,
+    },
+    PowrButton {
+        name: "Hibernate",
+        message: Message::Hibernate,
+        run: power::hibernate,
+    },
+    PowrButton {
+        name: "Reboot",
+        message: Message::Reboot,
+        run: power::reboot,
+    },
+    PowrButton {
+        name: "Shutdown",
+        message: Message::Shutdown,
+        run: power::shutdown,
+    },
 ];
 
 #[derive(Debug, Clone)]
@@ -25,7 +54,6 @@ enum Message {
     ButtonHovered(usize),
     Lock,
     Sleep,
-    Suspend,
     Hibernate,
     Reboot,
     Shutdown,
@@ -35,27 +63,47 @@ impl Powr {
     fn update(&mut self, message: Message) {
         match &message {
             Message::DownPressed => {
-                self.btn_index += 1;
+                let size = BUTTONS.len();
+                if self.btn_index == size - 1 {
+                    self.btn_index = 0;
+                } else {
+                    self.btn_index += 1;
+                }
             }
             Message::UpPressed => {
-                self.btn_index -= 1;
+                let size = BUTTONS.len();
+                if self.btn_index == 0 {
+                    self.btn_index = size - 1;
+                } else {
+                    self.btn_index -= 1;
+                }
             }
             Message::ButtonHovered(index) => {
                 self.btn_index = index.to_owned();
             }
-            Message::EnterPresed => todo!(),
-            Message::Lock => todo!(),
-            Message::Sleep => todo!(),
-            Message::Suspend => todo!(),
-            Message::Hibernate => todo!(),
-            Message::Reboot => todo!(),
-            Message::Shutdown => todo!(),
+            Message::EnterPresed => {
+                let btn = BUTTONS.get(self.btn_index).unwrap();
+                (btn.run)();
+            }
+            Message::Lock => {
+                power::lock();
+            }
+            Message::Sleep => power::sleep(),
+            Message::Hibernate => power::hibernate(),
+            Message::Reboot => power::reboot(),
+            Message::Shutdown => power::shutdown(),
         }
     }
 
-    fn view(&self) -> Container<Message> {
-        let interface = column(BUTTONS.iter().enumerate().map(|(index, (label, message))| {
-            build_button(label, self.btn_index == index, message.clone(), index).into()
+    fn view(&self) -> Container<'_, Message> {
+        let interface = column(BUTTONS.iter().enumerate().map(|(index, btn)| {
+            build_button(
+                btn.name,
+                self.btn_index == index,
+                btn.message.clone(),
+                index,
+            )
+            .into()
         }))
         .spacing(10)
         .padding(20);
@@ -68,7 +116,6 @@ impl Powr {
                 text_color: Some(color!(0xcdd6f4)),
                 ..Default::default()
             })
-            .into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -98,7 +145,7 @@ impl Powr {
     }
 }
 
-fn build_button<'a>(
+fn build_button(
     text: &str,
     active: bool,
     message: Message,
@@ -141,12 +188,4 @@ fn main() -> iced::Result {
             ..Default::default()
         })
         .run()
-}
-
-fn sleep() {
-    println!("test")
-}
-
-fn shutdown() {
-    println!("computer down");
 }
