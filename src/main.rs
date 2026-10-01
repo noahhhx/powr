@@ -1,13 +1,19 @@
 use iced::{
     Length, Renderer, Subscription, Theme, color, keyboard,
-    widget::{Container, MouseArea, button, column, container, mouse_area},
+    widget::{Container, MouseArea, button, column, container, mouse_area, text},
 };
 
+use colour::color_from_u32;
+
+mod colour;
 mod power;
+
+use crate::colour::Colour;
 
 #[derive(Default)]
 struct Powr {
     btn_index: usize,
+    colour: Colour,
 }
 
 struct PowrButton {
@@ -102,6 +108,7 @@ impl Powr {
                 self.btn_index == index,
                 btn.message.clone(),
                 index,
+                self.colour.clone(),
             )
             .into()
         }))
@@ -112,7 +119,7 @@ impl Powr {
             .width(Length::Fill)
             .height(Length::Fill)
             .style(|_theme| iced::widget::container::Style {
-                background: Some(color!(0x1e1e2e).into()),
+                background: Some(color_from_u32(self.colour.background).into()),
                 text_color: Some(color!(0xcdd6f4)),
                 ..Default::default()
             })
@@ -146,24 +153,29 @@ impl Powr {
 }
 
 fn build_button(
-    text: &str,
+    label: &str,
     active: bool,
     message: Message,
     index: usize,
+    colour: Colour,
 ) -> MouseArea<'_, Message, Theme, Renderer> {
     mouse_area(
-        button(text)
+        button(text(label).height(iced::Fill).center())
             .style(move |_theme, status| {
                 if active || matches!(status, button::Status::Hovered) {
                     button::Style {
-                        background: Some(color!(0x313244).into()),
-                        text_color: color!(0xcdd6f4),
+                        background: Some(iced::Background::Color(color_from_u32(
+                            colour.button_active_background,
+                        ))),
+                        text_color: color_from_u32(colour.button_active_text),
                         ..Default::default()
                     }
                 } else {
                     button::Style {
-                        background: Some(color!(0x1e1e2e).into()),
-                        text_color: color!(0xcdd6f4),
+                        background: Some(iced::Background::Color(color_from_u32(
+                            colour.button_inactive_background,
+                        ))),
+                        text_color: color_from_u32(colour.button_inactive_text),
                         ..Default::default()
                     }
                 }
@@ -182,7 +194,7 @@ fn main() -> iced::Result {
             size: iced::Size::new(300.0, 400.0),
             resizable: false,
             platform_specific: iced::window::settings::PlatformSpecific {
-                application_id: "powerdeck".to_string(),
+                application_id: "powr".to_string(),
                 ..Default::default()
             },
             ..Default::default()

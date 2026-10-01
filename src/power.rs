@@ -1,7 +1,8 @@
 use std::process::{Command, exit};
 
 pub fn lock() {
-    println!("locked!");
+    Command::new("hyprlock").output().expect("Uh oh");
+    exit(0);
 }
 
 pub fn sleep() {
