@@ -6,14 +6,18 @@ use iced::{
 use colour::color_from_u32;
 
 mod colour;
+mod config;
 mod power;
 
-use crate::colour::Colour;
+use crate::{
+    colour::ColourConfig,
+    config::{AppConfig, ConfigError, load_or_init},
+};
 
 #[derive(Default)]
 struct Powr {
     btn_index: usize,
-    colour: Colour,
+    colour: ColourConfig,
 }
 
 struct PowrButton {
@@ -66,6 +70,13 @@ enum Message {
 }
 
 impl Powr {
+    fn from_config(config: AppConfig) -> Self {
+        Powr {
+            btn_index: 0,
+            colour: config.colour,
+        }
+    }
+
     fn update(&mut self, message: Message) {
         match &message {
             Message::DownPressed => {
@@ -157,7 +168,7 @@ fn build_button(
     active: bool,
     message: Message,
     index: usize,
-    colour: Colour,
+    colour: ColourConfig,
 ) -> MouseArea<'_, Message, Theme, Renderer> {
     mouse_area(
         button(text(label).height(iced::Fill).center())
@@ -188,16 +199,36 @@ fn build_button(
 }
 
 fn main() -> iced::Result {
-    iced::application(Powr::default, Powr::update, Powr::view)
-        .subscription(Powr::subscription)
-        .window(iced::window::Settings {
-            size: iced::Size::new(300.0, 400.0),
-            resizable: false,
-            platform_specific: iced::window::settings::PlatformSpecific {
-                application_id: "powr".to_string(),
-                ..Default::default()
-            },
+    let config = match load_or_init() {
+        Ok(v) => v,
+        Err(err) => {
+            match err {
+                ConfigError::IoError(err) => {
+                    eprintln!("An error occurred while loading the config: {err}");
+                }
+                ConfigError::InvalidConfig(err) => {
+                    eprintln!("An error occurred while parsing the config:");
+                    eprintln!("{err}");
+                }
+            }
+            AppConfig::default()
+        }
+    };
+
+    iced::application(
+        move || Powr::from_config(config.clone()),
+        Powr::update,
+        Powr::view,
+    )
+    .subscription(Powr::subscription)
+    .window(iced::window::Settings {
+        size: iced::Size::new(300.0, 400.0),
+        resizable: false,
+        platform_specific: iced::window::settings::PlatformSpecific {
+            application_id: "powr".to_string(),
             ..Default::default()
-        })
-        .run()
+        },
+        ..Default::default()
+    })
+    .run()
 }

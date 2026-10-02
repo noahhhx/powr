@@ -1,5 +1,7 @@
-#[derive(Clone)]
-pub struct Colour {
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ColourConfig {
     pub background: u32,
     pub button_active_background: u32,
     pub button_active_text: u32,
@@ -7,9 +9,9 @@ pub struct Colour {
     pub button_inactive_text: u32,
 }
 
-impl Default for Colour {
+impl Default for ColourConfig {
     fn default() -> Self {
-        Colour {
+        ColourConfig {
             background: 0x1e1e2e,
             button_active_background: 0x313244,
             button_active_text: 0xcdd6f4,
