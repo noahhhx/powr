@@ -12,11 +12,11 @@ pub struct ColourConfig {
 impl Default for ColourConfig {
     fn default() -> Self {
         ColourConfig {
-            background: 0x1e1e2e,
-            button_active_background: 0x313244,
-            button_active_text: 0xcdd6f4,
-            button_inactive_background: 0x1e1e2e,
-            button_inactive_text: 0xcdd6f4,
+            background: 0x0f0f0f,
+            button_active_background: 0x2a2a2a,
+            button_active_text: 0x89b4fa,
+            button_inactive_background: 0x0f0f0f,
+            button_inactive_text: 0xa6adc8,
         }
     }
 }
