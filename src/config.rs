@@ -27,7 +27,7 @@ pub struct AppConfig {
 }
 
 pub fn load_or_init() -> Result<AppConfig, ConfigError> {
-    let mut config_home = std::env::var("$XDG_CONFIG_HOME").unwrap_or_default();
+    let mut config_home = std::env::var("XDG_CONFIG_HOME").unwrap_or_default();
     if config_home.is_empty() {
         config_home = std::env::var("HOME").unwrap() + "/.config";
     };
