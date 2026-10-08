@@ -1,9 +1,7 @@
 use iced::{
-    Length, Renderer, Subscription, Theme, color, keyboard,
+    Length, Renderer, Subscription, Theme, keyboard,
     widget::{Container, MouseArea, button, column, container, mouse_area, text},
 };
-
-use colour::color_from_u32;
 
 mod colour;
 mod config;
@@ -12,61 +10,23 @@ mod power;
 use crate::{
     colour::ColourConfig,
     config::{AppConfig, ConfigError, load_or_init},
+    power::{Action, PowerConfig},
 };
 
 #[derive(Default)]
 struct Powr {
     btn_index: usize,
     colour: ColourConfig,
+    power: PowerConfig,
 }
-
-struct PowrButton {
-    name: &'static str,
-    message: Message,
-    run: ButtonFn,
-}
-
-type ButtonFn = fn();
-
-const BUTTONS: &[PowrButton] = &[
-    PowrButton {
-        name: "Lock",
-        message: Message::Lock,
-        run: power::lock,
-    },
-    PowrButton {
-        name: "Sleep",
-        message: Message::Sleep,
-        run: power::sleep,
-    },
-    PowrButton {
-        name: "Hibernate",
-        message: Message::Hibernate,
-        run: power::hibernate,
-    },
-    PowrButton {
-        name: "Reboot",
-        message: Message::Reboot,
-        run: power::reboot,
-    },
-    PowrButton {
-        name: "Shutdown",
-        message: Message::Shutdown,
-        run: power::shutdown,
-    },
-];
 
 #[derive(Debug, Clone)]
 enum Message {
-    DownPressed,
-    UpPressed,
-    EnterPresed,
+    Next,
+    Prev,
+    Activate,
     ButtonHovered(usize),
-    Lock,
-    Sleep,
-    Hibernate,
-    Reboot,
-    Shutdown,
+    Run(Action),
 }
 
 impl Powr {
@@ -74,21 +34,22 @@ impl Powr {
         Powr {
             btn_index: 0,
             colour: config.colour,
+            power: config.power,
         }
     }
 
     fn update(&mut self, message: Message) {
-        match &message {
-            Message::DownPressed => {
-                let size = BUTTONS.len();
+        match message {
+            Message::Next => {
+                let size = Action::ALL.len();
                 if self.btn_index == size - 1 {
                     self.btn_index = 0;
                 } else {
                     self.btn_index += 1;
                 }
             }
-            Message::UpPressed => {
-                let size = BUTTONS.len();
+            Message::Prev => {
+                let size = Action::ALL.len();
                 if self.btn_index == 0 {
                     self.btn_index = size - 1;
                 } else {
@@ -96,30 +57,23 @@ impl Powr {
                 }
             }
             Message::ButtonHovered(index) => {
-                self.btn_index = index.to_owned();
+                self.btn_index = index;
             }
-            Message::EnterPresed => {
-                let btn = BUTTONS.get(self.btn_index).unwrap();
-                (btn.run)();
+            Message::Activate => {
+                self.run(Action::ALL[self.btn_index]);
             }
-            Message::Lock => {
-                power::lock();
-            }
-            Message::Sleep => power::sleep(),
-            Message::Hibernate => power::hibernate(),
-            Message::Reboot => power::reboot(),
-            Message::Shutdown => power::shutdown(),
+            Message::Run(action) => self.run(action),
         }
     }
 
     fn view(&self) -> Container<'_, Message> {
-        let interface = column(BUTTONS.iter().enumerate().map(|(index, btn)| {
+        let interface = column(Action::ALL.iter().enumerate().map(|(index, &action)| {
             build_button(
-                btn.name,
+                action.label(),
                 self.btn_index == index,
-                btn.message.clone(),
+                Message::Run(action),
                 index,
-                self.colour.clone(),
+                self.colour,
             )
             .into()
         }))
@@ -130,8 +84,8 @@ impl Powr {
             .width(Length::Fill)
             .height(Length::Fill)
             .style(|_theme| iced::widget::container::Style {
-                background: Some(color_from_u32(self.colour.background).into()),
-                text_color: Some(color!(0xcdd6f4)),
+                background: Some(self.colour.background.0.into()),
+                text_color: Some(self.colour.button_active_text.0),
                 ..Default::default()
             })
     }
@@ -149,17 +103,21 @@ impl Powr {
 
             match modified_key {
                 keyboard::key::Named::ArrowUp | keyboard::key::Named::ArrowLeft => {
-                    Some(Message::UpPressed)
+                    Some(Message::Prev)
                 }
                 keyboard::key::Named::ArrowDown | keyboard::key::Named::ArrowRight => {
-                    Some(Message::DownPressed)
+                    Some(Message::Next)
                 }
                 keyboard::key::Named::Enter | keyboard::key::Named::Accept => {
-                    Some(Message::EnterPresed)
+                    Some(Message::Activate)
                 }
                 _ => None,
             }
         })
+    }
+
+    fn run(&self, action: Action) {
+        power::run_cmd(self.power.cmd(action));
     }
 }
 
@@ -175,18 +133,18 @@ fn build_button(
             .style(move |_theme, status| {
                 if active || matches!(status, button::Status::Hovered) {
                     button::Style {
-                        background: Some(iced::Background::Color(color_from_u32(
-                            colour.button_active_background,
-                        ))),
-                        text_color: color_from_u32(colour.button_active_text),
+                        background: Some(iced::Background::Color(
+                            colour.button_active_background.0,
+                        )),
+                        text_color: colour.button_active_text.0,
                         ..Default::default()
                     }
                 } else {
                     button::Style {
-                        background: Some(iced::Background::Color(color_from_u32(
-                            colour.button_inactive_background,
-                        ))),
-                        text_color: color_from_u32(colour.button_inactive_text),
+                        background: Some(iced::Background::Color(
+                            colour.button_inactive_background.0,
+                        )),
+                        text_color: colour.button_inactive_text.0,
                         ..Default::default()
                     }
                 }

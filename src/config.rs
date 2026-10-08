@@ -2,7 +2,7 @@ use std::{fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use crate::colour::ColourConfig;
+use crate::{colour::ColourConfig, power::PowerConfig};
 
 pub enum ConfigError {
     IoError(std::io::Error),
@@ -24,6 +24,7 @@ impl From<toml::de::Error> for ConfigError {
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct AppConfig {
     pub colour: ColourConfig,
+    pub power: PowerConfig,
 }
 
 pub fn load_or_init() -> Result<AppConfig, ConfigError> {
