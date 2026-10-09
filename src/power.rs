@@ -88,7 +88,12 @@ impl Default for PowerConfig {
 }
 
 pub fn run_cmd(cmd: &Cmd) {
-    Command::new(&cmd.command)
+    Command::new("sh")
+        .arg("-c")
+        // bit of a hack so we don't see hyprland close animation after unlock
+        .arg(r#"sleep 0.3 && exec "$@""#)
+        .arg("sh")
+        .arg(&cmd.command)
         .args(&cmd.args)
         .stdin(Stdio::null())
         .stdout(Stdio::null())

@@ -18,6 +18,7 @@ struct Powr {
     btn_index: usize,
     colour: ColourConfig,
     power: PowerConfig,
+    last_key_press: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +36,7 @@ impl Powr {
             btn_index: 0,
             colour: config.colour,
             power: config.power,
+            last_key_press: false,
         }
     }
 
@@ -47,6 +49,7 @@ impl Powr {
                 } else {
                     self.btn_index += 1;
                 }
+                self.last_key_press = true;
             }
             Message::Prev => {
                 let size = Action::ALL.len();
@@ -55,9 +58,11 @@ impl Powr {
                 } else {
                     self.btn_index -= 1;
                 }
+                self.last_key_press = true;
             }
             Message::ButtonHovered(index) => {
                 self.btn_index = index;
+                self.last_key_press = false;
             }
             Message::Activate => {
                 self.run(Action::ALL[self.btn_index]);
@@ -74,6 +79,7 @@ impl Powr {
                 Message::Run(action),
                 index,
                 self.colour,
+                self.last_key_press,
             )
             .into()
         }))
@@ -127,11 +133,14 @@ fn build_button(
     message: Message,
     index: usize,
     colour: ColourConfig,
+    last_key_press: bool,
 ) -> MouseArea<'_, Message, Theme, Renderer> {
     mouse_area(
         button(text(label).height(iced::Fill).center())
             .style(move |_theme, status| {
-                if active || matches!(status, button::Status::Hovered) {
+                if (active && last_key_press)
+                    || (matches!(status, button::Status::Hovered) && !last_key_press)
+                {
                     button::Style {
                         background: Some(iced::Background::Color(
                             colour.button_active_background.0,
