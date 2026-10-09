@@ -48,13 +48,3 @@ pub fn load_or_init() -> Result<AppConfig, ConfigError> {
     fs::write(powr_cfg_path, toml)?;
     Ok(config)
 }
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test() {
-        let user_home = std::env::var("XDG_CONFIG_HOME").unwrap();
-        println!("{user_home}")
-    }
-}
