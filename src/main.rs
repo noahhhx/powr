@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use iced::{
     Length, Renderer, Subscription, Theme, keyboard,
     widget::{Container, MouseArea, button, column, container, mouse_area, text},
@@ -28,6 +30,7 @@ enum Message {
     Activate,
     ButtonHovered(usize),
     Run(Action),
+    Exit,
 }
 
 impl Powr {
@@ -36,7 +39,7 @@ impl Powr {
             btn_index: 0,
             colour: config.colour,
             power: config.power,
-            last_key_press: false,
+            last_key_press: true,
         }
     }
 
@@ -68,6 +71,7 @@ impl Powr {
                 self.run(Action::ALL[self.btn_index]);
             }
             Message::Run(action) => self.run(action),
+            Message::Exit => exit(0),
         }
     }
 
@@ -117,6 +121,7 @@ impl Powr {
                 keyboard::key::Named::Enter | keyboard::key::Named::Accept => {
                     Some(Message::Activate)
                 }
+                keyboard::key::Named::Escape => Some(Message::Exit),
                 _ => None,
             }
         })
